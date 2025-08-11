@@ -7,7 +7,7 @@ Tampermonkey/Greasemonkey 用户脚本，给 Emby 媒体详情页与 Action Shee
 
 ## 一键安装
 
-[➡️ 点击这里安装 / Update (Tampermonkey)](https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby/Emby-Cover-Art-Helper.js)
+[➡️ 点击这里安装 / Update (Tampermonkey)](https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby-Cover-Art-Helper.js)
 
 （如果浏览器未自动弹出 Tampermonkey 安装窗口，请确认已安装并启用 Tampermonkey 扩展，然后再点一次；或复制上面链接到地址栏回车。）
 
@@ -25,13 +25,25 @@ Tampermonkey/Greasemonkey 用户脚本，给 Emby 媒体详情页与 Action Shee
 如果“一键安装”失败，可按下面手动：
 
 1. 安装 Tampermonkey 扩展。
-2. 打开仓库文件：`Emby/Emby-Cover-Art-Helper.js` (Raw 模式或本地打开)。
+2. 打开仓库文件：`Emby-Cover-Art-Helper.js` (Raw 模式或本地打开)。
 3. 复制全部代码。
 4. Tampermonkey 图标 -> Dashboard -> Utilities -> “Create a new script”。
 5. 删除默认模板，粘贴代码，保存 (Ctrl+S)。
 6. 访问 Emby：`http(s)://<你的域名或IP>/web/index.html`。
 7. 打开任意媒体详情页验证是否出现按钮。
 8. 不出现：强制刷新 (Ctrl+F5) / 检查控制台 `[CoverHelper]` 日志。
+
+## 手动部署（自托管 Raw）
+
+如果你想在自己服务器上托管以加速国内访问：
+1. 将 `Emby-Cover-Art-Helper.js` 放到任意可静态访问的位置（如 Nginx / Git Pages / Cloudflare R2 静态）。
+2. 确保响应头 `Content-Type: text/javascript; charset=utf-8`（不必须但推荐）。
+3. 修改脚本头部 `@downloadURL` 与 `@updateURL` 为你的完整 HTTPS 地址。
+4. 访问该新地址测试是否能触发 Tampermonkey 安装弹窗。
+5. 以后更新：
+	- 递增 `@version` 值。
+	- 覆盖同路径文件。
+	- 手动在 Tampermonkey 中 “Check for updates” 验证生效。
 
 ## 自动更新说明
 

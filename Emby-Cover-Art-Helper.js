@@ -7,8 +7,8 @@
 // @author       kumuze (orig idea & maintenance); contributors: Gemini, GitHub Copilot
 // @license      MIT
 // @icon         https://github.githubassets.com/pinned-octocat.svg
-// @downloadURL  https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby/Emby-Cover-Art-Helper.js
-// @updateURL    https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby/Emby-Cover-Art-Helper.js
+// @downloadURL  https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby-Cover-Art-Helper.js
+// @updateURL    https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby-Cover-Art-Helper.js
 // @match        *://*/web/index.html*
 // @run-at       document-idle
 // @grant        GM_addStyle
