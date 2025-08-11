@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emby Cover Art Helper
 // @namespace    https://github.com/kumu-ze/Emby-Cover-Art-Helper
-// @version      1.0
+// @version      1.0.1
 // @description  Emby 封面查看&下载助手：在详情页与操作菜单添加查看/下载封面按钮，自动识别语言，性能优化、防重复注入。
 // @description:en View & download Emby cover images on detail pages and action sheet; i18n + perf optimized.
 // @author       kumuze (orig idea & maintenance); contributors: Gemini, GitHub Copilot
@@ -19,8 +19,21 @@
 (function () {
 	'use strict';
 
+	/********************** 环境探测与兼容层 ************************/
+	const HAS_GM_ADDSTYLE = typeof GM_addStyle === 'function';
+	const HAS_GM_XHR = typeof GM_xmlhttpRequest === 'function';
+	const HAS_GM_DOWNLOAD = typeof GM_download === 'function';
+
+	function injectStyleFallback(css) {
+		if (document.getElementById('cover-helper-style')) return;
+		const style = document.createElement('style');
+		style.id = 'cover-helper-style';
+		style.textContent = css;
+		document.head.appendChild(style);
+	}
+
 	/********************** 样式 ************************/ 
-	GM_addStyle(`
+	const STYLE_BLOCK = `
 		.detailButton.custom-cover-btn {
 			background-color: #525252;
 			color: #fff;
@@ -31,7 +44,12 @@
 		.custom-cover-inline-icon { vertical-align: middle; }
 		/* ActionSheet 自定义按钮（跟随原主题即可，主要保证结构一致） */
 		.actionSheetMenuItem.custom-cover-btn-injected .listItemBodyText { font-weight: 500; }
-	`);
+	`;
+	if (HAS_GM_ADDSTYLE) {
+		GM_addStyle(STYLE_BLOCK);
+	} else {
+		injectStyleFallback(STYLE_BLOCK);
+	}
 
 	/********************** 配置 / 可调参数 ************************/ 
 	const CONFIG = {
@@ -89,43 +107,55 @@
 		return undefined;
 	}
 
-	/********************** 下载逻辑 ************************/ 
+	/********************** 下载逻辑（多环境） ************************/ 
 	function downloadImage(url, titleHint) {
 		if (!url) return;
 		const baseName = safeFileName(titleHint || currentTitle());
 
-		// 如果支持 GM_download 并允许使用
-		if (CONFIG.preferGMDownload && typeof GM_download === 'function') {
-			// 直接使用 GM_download；无法自动推断扩展名时先用 .jpg
+		// 1. 优先 GM_download
+		if (CONFIG.preferGMDownload && HAS_GM_DOWNLOAD) {
 			try {
 				GM_download({ url, name: baseName + '.jpg', saveAs: true, ontimeout: () => log('GM_download timeout') });
 				return;
-			} catch (e) { log('GM_download fallback to XHR', e); }
+			} catch (e) { log('GM_download error -> fallback', e); }
 		}
 
-		GM_xmlhttpRequest({
-			method: 'GET',
-			url,
-			responseType: 'blob',
-			onload: (res) => {
-				try {
-					const blob = res.response;
-						// 兼容某些脚本管理器不给 responseHeaders
-					const extension = guessExtensionFromHeaders(res.responseHeaders || '') || 'jpg';
-					const a = document.createElement('a');
-					a.href = URL.createObjectURL(blob);
-					a.download = baseName + '.' + extension.replace(/[^a-z0-9]/gi, '');
-					document.body.appendChild(a);
-					a.click();
-					document.body.removeChild(a);
-					setTimeout(() => URL.revokeObjectURL(a.href), 8000);
-				} catch (err) {
-					console.error(err);
-					alert(I18N.failed);
-				}
-			},
-			onerror: (e) => { console.error('Download error', e); alert(I18N.failed); }
-		});
+		// 2. GM_xmlhttpRequest 分支
+		if (HAS_GM_XHR) {
+			GM_xmlhttpRequest({
+				method: 'GET',
+				url,
+				responseType: 'blob',
+				onload: (res) => genericDownloadHandler(res.response, guessExtensionFromHeaders(res.responseHeaders || ''), baseName),
+				onerror: (e) => { console.error('Download error', e); alert(I18N.failed); }
+			});
+			return;
+		}
+
+		// 3. 纯浏览器 fetch 回退
+		fetch(url, { credentials: 'include' })
+			.then(res => {
+				if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+				const ct = res.headers.get('content-type') || '';
+				const ext = guessExtensionFromHeaders('content-type: ' + ct);
+				return res.blob().then(blob => genericDownloadHandler(blob, ext, baseName));
+			})
+			.catch(err => { console.error('Fetch download failed', err); alert(I18N.failed); });
+	}
+
+	function genericDownloadHandler(blob, extension, baseName) {
+		try {
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = baseName + '.' + (extension || 'jpg').replace(/[^a-z0-9]/gi, '');
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+		} catch (err) {
+			console.error(err);
+			alert(I18N.failed);
+		}
 	}
 
 	/********************** 按钮生成 ************************/ 

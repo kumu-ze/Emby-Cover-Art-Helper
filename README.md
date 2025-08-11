@@ -53,6 +53,21 @@ https://raw.githubusercontent.com/kumu-ze/Emby-Cover-Art-Helper/main/Emby-Cover-
    - 覆盖同路径文件。
    - 手动在 Tampermonkey 中 “Check for updates” 验证生效。
 
+## 客户端（无油猴）直接引入模式
+
+脚本已内置降级：在没有 GM_* API 的环境下仍可工作（使用 fetch + 原生 <style> 注入）。
+
+使用步骤：
+1. 将 `Emby-Cover-Art-Helper.js` 置于可被 Emby 前端访问的静态目录（例如反向代理的 /branding/ 目录）。
+2. 在自定义注入（或修改 index.html 模板）中加入：
+   `<script src="/branding/Emby-Cover-Art-Helper.js" defer></script>`
+3. 清理浏览器缓存（Ctrl+F5），打开 Emby 详情页验证按钮。
+4. 如果仍无效果，打开开发者工具 Console 检查是否有 404 或 CSP 拒绝脚本的报错。
+
+差异说明：
+- 无 GM_download 时使用 fetch + Blob 方案下载。
+- 其它功能保持一致。
+
 ## 自动更新说明
 
 脚本头部已包含 @downloadURL 与 @updateURL：
